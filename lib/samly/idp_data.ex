@@ -38,7 +38,7 @@ defmodule Samly.IdpData do
           id: binary(),
           sp_id: binary(),
           base_url: nil | binary(),
-          metadata_file: nil | binary(),
+          metadata_file: nil | binary() | map(),
           pre_session_create_pipeline: nil | module(),
           use_redirect_for_req: boolean(),
           sign_requests: boolean(),
@@ -104,29 +104,53 @@ defmodule Samly.IdpData do
   end
 
   @spec load_metadata(%IdpData{}, map()) :: %IdpData{}
-  defp load_metadata(idp_data, _opts_map) do
-    with {:reading, {:ok, raw_xml}} <- {:reading, File.read(idp_data.metadata_file)},
+  defp load_metadata(%IdpData{metadata_file: metadata_file} = idp_data, _opts_map)
+       when is_binary(metadata_file) do
+    with {:reading, {:ok, raw_xml}} <- {:reading, File.read(metadata_file)},
          {:parsing, {:ok, idp_data}} <- {:parsing, from_xml(raw_xml, idp_data)} do
       idp_data
     else
       {:reading, {:error, reason}} ->
         Logger.error(
-          "[Samly] Failed to read metadata_file [#{inspect(idp_data.metadata_file)}]: #{
-            inspect(reason)
-          }"
+          "[Samly] Failed to read metadata_file [#{inspect(metadata_file)}]: #{inspect(reason)}"
         )
 
         idp_data
 
       {:parsing, {:error, reason}} ->
         Logger.error(
-          "[Samly] Invalid metadata_file content [#{inspect(idp_data.metadata_file)}]: #{
-            inspect(reason)
-          }"
+          "[Samly] Invalid metadata_file content [#{inspect(metadata_file)}]: #{inspect(reason)}"
         )
 
         idp_data
     end
+  end
+
+  defp load_metadata(%IdpData{metadata_file: data} = idp_data, _opts_map) when is_map(data) do
+    # TODO defstruct on the map:
+    # %{
+    #  certs: ["xyz"],
+    #  entity_id: "http://www.abc.com/def",
+    #  nameid_format: 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddressurn:oasis:names:tc:SAML:2.0:nameid-format:transient',
+    #  signed_requests: "false",
+    #  slo_post_url: nil,
+    #  slo_redirect_url: nil,
+    #  sso_post_url: "https://url.com/sso/saml",
+    #  sso_redirect_url: "https://url.com/sso/saml"
+    # }
+
+    %IdpData{
+      idp_data
+      | entity_id: data.entity_id,
+        signed_requests: data.signed_requests,
+        certs: data.certs,
+        fingerprints: idp_cert_fingerprints(data.certs),
+        sso_redirect_url: data.sso_redirect_url,
+        sso_post_url: data.sso_post_url,
+        slo_redirect_url: data.slo_redirect_url,
+        slo_post_url: data.slo_post_url,
+        nameid_format: data.nameid_format
+    }
   end
 
   @spec update_esaml_recs(%IdpData{}, %{required(id()) => %SpData{}}, map()) :: %IdpData{}
