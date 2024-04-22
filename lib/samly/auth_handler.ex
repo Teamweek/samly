@@ -30,7 +30,7 @@ defmodule Samly.AuthHandler do
         <%= if target_url do %>
         <input type=\"hidden\" name=\"target_url\" value=\"<%= target_url %>\" />
         <% end %>
-        <%= if state do %>
+        <%= if state != nil do %>
           <input type=\"hidden\" name=\"state\" value=\"<%= state %>\" />
         <% end %>
         <input type=\"hidden\" name=\"_csrf_token\" value=\"<%= csrf_token %>\" />
@@ -51,7 +51,8 @@ defmodule Samly.AuthHandler do
           nonce: conn.private[:samly_nonce],
           action: URI.encode(conn.request_path),
           target_url: URI.encode_www_form(target_url),
-          csrf_token: get_csrf_token()
+          csrf_token: get_csrf_token(),
+          state: nil
         ]
       else
         [
