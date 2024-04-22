@@ -3,13 +3,14 @@ defmodule Samly.AuthRouter do
 
   use Plug.Router
   import Plug.Conn
-  import Samly.RouterUtil, only: [check_idp_id: 2, check_target_url: 2]
+  import Samly.RouterUtil, only: [check_idp_id: 2, check_target_url: 2, check_state: 2]
 
   plug :fetch_session
   plug Plug.CSRFProtection
   plug :match
   plug :check_idp_id
   plug :check_target_url
+  plug :check_state
   plug :dispatch
 
   get "/signin/*idp_id_seg" do

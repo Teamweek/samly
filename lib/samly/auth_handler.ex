@@ -30,6 +30,9 @@ defmodule Samly.AuthHandler do
         <%= if target_url do %>
         <input type=\"hidden\" name=\"target_url\" value=\"<%= target_url %>\" />
         <% end %>
+        <%= if state do %>
+          <input type=\"hidden\" name=\"state\" value=\"<%= state %>\" />
+        <% end %>
         <input type=\"hidden\" name=\"_csrf_token\" value=\"<%= csrf_token %>\" />
         <noscript><input type=\"submit\" value=\"Submit\" /></noscript>
       </form>
@@ -42,12 +45,23 @@ defmodule Samly.AuthHandler do
 
     target_url = conn.private[:samly_target_url] || "/"
 
-    opts = [
-      nonce: conn.private[:samly_nonce],
-      action: URI.encode(conn.request_path),
-      target_url: URI.encode_www_form(target_url),
-      csrf_token: get_csrf_token()
-    ]
+    opts =
+      if Application.get_env(:samly, :random_relay_state, false) do
+        [
+          nonce: conn.private[:samly_nonce],
+          action: URI.encode(conn.request_path),
+          target_url: URI.encode_www_form(target_url),
+          csrf_token: get_csrf_token()
+        ]
+      else
+        [
+          nonce: conn.private[:samly_nonce],
+          action: URI.encode(conn.request_path),
+          target_url: URI.encode_www_form(target_url),
+          csrf_token: get_csrf_token(),
+          state: conn.private[:samly_relay_state]
+        ]
+      end
 
     conn
     |> put_resp_header("content-type", "text/html")
@@ -67,7 +81,12 @@ defmodule Samly.AuthHandler do
         conn |> redirect(302, target_url)
 
       _ ->
-        relay_state = State.gen_id()
+        relay_state =
+          if Application.get_env(:samly, :random_relay_state, false) do
+            State.gen_id()
+          else
+            Map.fetch!(conn.private, :samly_relay_state)
+          end
 
         {idp_signin_url, req_xml_frag} =
           Helper.gen_idp_signin_req(sp, idp_rec, Map.get(idp, :nameid_format))

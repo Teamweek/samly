@@ -47,6 +47,23 @@ defmodule Samly.RouterUtil do
     end
   end
 
+  def check_state(conn = %{params: %{"state" => state}}, _opts) do
+    if Application.get_env(:samly, :random_relay_state, false) do
+      conn
+    else
+      state = URI.decode_www_form(state)
+      Conn.put_private(conn, :samly_relay_state, state)
+    end
+  end
+
+  def check_state(conn, _opts) do
+    if Application.get_env(:samly, :random_relay_state, false) do
+      conn
+    else
+      conn |> Conn.send_resp(500, "misconfigured SP parameters") |> Conn.halt()
+    end
+  end
+
   # generate URIs using the idp_id
   @spec ensure_sp_uris_set(tuple, Conn.t()) :: tuple
   def ensure_sp_uris_set(sp, conn) do
