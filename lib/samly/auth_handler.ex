@@ -31,7 +31,7 @@ defmodule Samly.AuthHandler do
         <input type=\"hidden\" name=\"target_url\" value=\"<%= target_url %>\" />
         <% end %>
         <%= if state != nil do %>
-          <input type=\"hidden\" name=\"state\" value=\"<%= state %>\" />
+        <input type=\"hidden\" name=\"state\" value=\"<%= state %>\" />
         <% end %>
         <input type=\"hidden\" name=\"_csrf_token\" value=\"<%= csrf_token %>\" />
         <noscript><input type=\"submit\" value=\"Submit\" /></noscript>

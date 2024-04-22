@@ -47,7 +47,10 @@ defmodule Samly.RouterUtil do
     end
   end
 
-  def check_state(conn = %{params: %{"state" => state}}, _opts) do
+  def check_state(
+        conn = %{path_info: ["signin", _idp_id], params: %{"state" => state}},
+        _opts
+      ) do
     if Application.get_env(:samly, :random_relay_state, true) do
       conn
     else
