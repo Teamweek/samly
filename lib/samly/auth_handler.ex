@@ -46,7 +46,7 @@ defmodule Samly.AuthHandler do
     target_url = conn.private[:samly_target_url] || "/"
 
     opts =
-      if Application.get_env(:samly, :random_relay_state, false) do
+      if Application.get_env(:samly, :random_relay_state, true) do
         [
           nonce: conn.private[:samly_nonce],
           action: URI.encode(conn.request_path),
@@ -83,7 +83,7 @@ defmodule Samly.AuthHandler do
 
       _ ->
         relay_state =
-          if Application.get_env(:samly, :random_relay_state, false) do
+          if Application.get_env(:samly, :random_relay_state, true) do
             State.gen_id()
           else
             Map.fetch!(conn.private, :samly_relay_state)

@@ -48,7 +48,7 @@ defmodule Samly.RouterUtil do
   end
 
   def check_state(conn = %{params: %{"state" => state}}, _opts) do
-    if Application.get_env(:samly, :random_relay_state, false) do
+    if Application.get_env(:samly, :random_relay_state, true) do
       conn
     else
       state = URI.decode_www_form(state)
@@ -57,7 +57,7 @@ defmodule Samly.RouterUtil do
   end
 
   def check_state(conn, _opts) do
-    if Application.get_env(:samly, :random_relay_state, false) do
+    if Application.get_env(:samly, :random_relay_state, true) do
       conn
     else
       conn |> Conn.send_resp(500, "misconfigured SP parameters") |> Conn.halt()
